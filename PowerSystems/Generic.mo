@@ -4,22 +4,24 @@ package Generic "Simple components for basic investigations"
 
   model Impedance
     extends PowerSystems.Generic.Ports.PartialTwoTerminal;
-    parameter SI.Resistance R = 1 "active component";
-    parameter SI.Inductance L = 1/314 "reactive component";
+    parameter SI.Resistance R=1 "active component";
+    parameter SI.Inductance L=1/314 "reactive component";
     SI.AngularFrequency omegaRef;
+    SI.Angle omegaRefAngle;
   equation
     if PhaseSystem.m > 0 then
-      omegaRef = der(PhaseSystem.thetaRef(terminal_p.theta));
+      omegaRefAngle = PhaseSystem.thetaRef(terminal_p.theta);
+      omegaRef = der(omegaRefAngle);
     else
       omegaRef = 0;
+      omegaRefAngle = 0;
     end if;
     v = R*i + omegaRef*L*j(i);
     zeros(PhaseSystem.n) = terminal_p.i + terminal_n.i;
     if PhaseSystem.m > 0 then
       terminal_p.theta = terminal_n.theta;
     end if;
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Rectangle(
             extent={{-70,30},{70,-30}},
             lineColor={0,120,120},
@@ -44,22 +46,24 @@ package Generic "Simple components for basic investigations"
 
   model Admittance
     extends PowerSystems.Generic.Ports.PartialTwoTerminal;
-    parameter SI.Conductance G = 1 "active component";
-    parameter SI.Capacitance C = 1/314 "reactive component";
+    parameter SI.Conductance G=1 "active component";
+    parameter SI.Capacitance C=1/314 "reactive component";
     SI.AngularFrequency omegaRef;
+    SI.Angle omegaRefAngle;
   equation
     if PhaseSystem.m > 0 then
-      omegaRef = der(PhaseSystem.thetaRef(terminal_p.theta));
+      omegaRefAngle = PhaseSystem.thetaRef(terminal_p.theta);
+      omegaRef = der(omegaRefAngle);
     else
       omegaRef = 0;
+      omegaRefAngle = 0;
     end if;
     i = G*v + omegaRef*C*j(v);
     zeros(PhaseSystem.n) = terminal_p.i + terminal_n.i;
     if PhaseSystem.m > 0 then
       terminal_p.theta = terminal_n.theta;
     end if;
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Rectangle(
             extent={{-70,30},{70,-30}},
             lineColor={0,120,120},
@@ -89,15 +93,14 @@ package Generic "Simple components for basic investigations"
 
   model Transformer "Ideal transformer model"
     extends PowerSystems.Generic.Ports.PartialTwoTerminal;
-    parameter Real ratio = 1 "conversion ratio terminal_p.v/terminal_n.v";
+    parameter Real ratio=1 "conversion ratio terminal_p.v/terminal_n.v";
   equation
     terminal_p.v = ratio*terminal_n.v;
     zeros(PhaseSystem.n) = ratio*terminal_p.i + terminal_n.i;
     if PhaseSystem.m > 0 then
       terminal_p.theta = terminal_n.theta;
     end if;
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Line(points={{-100,0},{-70,0}}, color={0,0,0}),
           Line(points={{70,0},{100,0}}, color={0,0,0}),
           Text(
@@ -125,8 +128,7 @@ package Generic "Simple components for basic investigations"
     extends PowerSystems.Generic.Ports.PartialLoad;
   equation
     terminal.v = zeros(PhaseSystem.n);
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,
-              -100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Line(points={{0,0},{0,-60}}, color={0,120,120}),
           Line(points={{-80,-60},{80,-60}}, color={0,120,120}),
           Line(points={{-50,-80},{50,-80}}, color={0,120,120}),
@@ -139,18 +141,14 @@ package Generic "Simple components for basic investigations"
   end Ground;
 
   model Generator "Basic transformation of rotational to electrical power"
-    extends PowerSystems.Generic.Ports.PartialVoltageSource(
-                                     final potentialReference = synchronous);
-    parameter Boolean synchronous = PhaseSystem.m > 0 "synchronous machine";
-    parameter Integer pp = 1 "pole-pair number";
-    parameter SI.Frequency f_nom = system.f_nom "nominal value of frequency"
-      annotation (Dialog(group="Reference Parameters"));
-    parameter PS.Voltage V_nom = 10e3 "nominal value of voltage"
-      annotation (Dialog(group="Reference Parameters"));
-    Modelica.Mechanics.Rotational.Interfaces.Flange_a flange
-      annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
-    SI.AngularVelocity w = pp*der(flange.phi);
-    PS.Voltage V(start = V_nom);
+    extends PowerSystems.Generic.Ports.PartialVoltageSource(final potentialReference=synchronous);
+    parameter Boolean synchronous=PhaseSystem.m > 0 "synchronous machine";
+    parameter Integer pp=1 "pole-pair number";
+    parameter SI.Frequency f_nom=system.f_nom "nominal value of frequency" annotation (Dialog(group="Reference Parameters"));
+    parameter PS.Voltage V_nom=10e3 "nominal value of voltage" annotation (Dialog(group="Reference Parameters"));
+    Modelica.Mechanics.Rotational.Interfaces.Flange_a flange annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
+    SI.AngularVelocity w=pp*der(flange.phi);
+    PS.Voltage V(start=V_nom);
   equation
     if PhaseSystem.m > 0 and synchronous then
       if Connections.isRoot(terminal.theta) then
@@ -163,8 +161,7 @@ package Generic "Simple components for basic investigations"
     end if;
     0 = PhaseSystem.activePower(terminal.v, terminal.i) + w*flange.tau;
     terminal.v = PhaseSystem.phaseVoltages(V, PhaseSystem.thetaRel(terminal.theta));
-    annotation (Icon(coordinateSystem(preserveAspectRatio=true,  extent={{-100,
-              -100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
           Line(points={{-100,0},{-50,0}}, color={0,120,120}),
           Line(points={{50,0},{100,0}}, color={0,120,120}),
           Text(
@@ -205,18 +202,14 @@ package Generic "Simple components for basic investigations"
   model Inverter "Convert direct current to alternating current"
     extends PowerSystems.Generic.Ports.PartialVoltageSource;
     package PhaseSystem_dc = PowerSystems.PhaseSystems.DirectCurrent;
-    PowerSystems.Generic.Ports.Terminal_p terminal_dc(
-      redeclare package PhaseSystem = PhaseSystem_dc)
-        annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
-    parameter PhaseSystem_dc.Voltage V_dc = 150e3 "voltage of dc system";
+    PowerSystems.Generic.Ports.Terminal_p terminal_dc(redeclare package PhaseSystem = PhaseSystem_dc) annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
+    parameter PhaseSystem_dc.Voltage V_dc=150e3 "voltage of dc system";
     PS.Current I "value of current";
   equation
     terminal_dc.v = PhaseSystem_dc.phaseVoltages(V_dc);
     terminal.i = PhaseSystem.phaseCurrents(I, PhaseSystem.thetaRel(terminal.theta));
-    0 = PhaseSystem_dc.activePower(terminal_dc.v, terminal_dc.i)
-      + PhaseSystem.activePower(terminal.v, terminal.i);
-    annotation (Icon(coordinateSystem(preserveAspectRatio=true,
-            extent={{-100,-100},{100,100}}), graphics={
+    0 = PhaseSystem_dc.activePower(terminal_dc.v, terminal_dc.i) + PhaseSystem.activePower(terminal.v, terminal.i);
+    annotation (Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
           Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
@@ -258,16 +251,14 @@ package Generic "Simple components for basic investigations"
 
   model FixedVoltageSource
     extends PowerSystems.Generic.Ports.PartialVoltageSource;
-    parameter PS.Voltage V = 10e3 "value of constant voltage";
+    parameter PS.Voltage V=10e3 "value of constant voltage";
   equation
     terminal.v = PhaseSystem.phaseVoltages(V, PhaseSystem.thetaRel(terminal.theta));
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,
-              -100},{100,100}}), graphics={Rectangle(
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
             fillColor={255,255,255},
-            fillPattern=FillPattern.CrossDiag),
-          Text(
+            fillPattern=FillPattern.CrossDiag), Text(
             extent={{-150,100},{150,140}},
             lineColor={0,0,0},
             textString="%name")}));
@@ -275,21 +266,23 @@ package Generic "Simple components for basic investigations"
 
   model FixedLoad
     extends PowerSystems.Generic.Ports.PartialLoad;
-    parameter SI.Power P = 0 "rms value of constant active power";
-    parameter SI.Angle phi = 0 "phase angle";
+    parameter SI.Power P=0 "rms value of constant active power";
+    parameter SI.Angle phi=0 "phase angle";
   equation
     PhaseSystem.phasePowers_vi(terminal.v, terminal.i) = PhaseSystem.phasePowers(P, phi);
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={Rectangle(
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
+          Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
             fillColor={255,255,255},
-            fillPattern=FillPattern.Solid), Text(
+            fillPattern=FillPattern.Solid),
+          Text(
             extent={{-38,-68},{38,-26}},
             lineColor={0,0,0},
             fillColor={255,255,255},
             fillPattern=FillPattern.Solid,
-            textString="VA"), Text(
+            textString="VA"),
+          Text(
             extent={{-150,100},{150,140}},
             lineColor={0,0,0},
             textString="%name")}));
@@ -297,13 +290,11 @@ package Generic "Simple components for basic investigations"
 
   model FixedCurrent
     extends PowerSystems.Generic.Ports.PartialLoad;
-    parameter SI.Current I = 0 "rms value of constant current";
-    parameter SI.Angle phi = 0 "phase angle"
-    annotation (Dialog(group="Reference Parameters", enable = definiteReference));
+    parameter SI.Current I=0 "rms value of constant current";
+    parameter SI.Angle phi=0 "phase angle" annotation (Dialog(group="Reference Parameters", enable=definiteReference));
   equation
     terminal.i = PhaseSystem.phaseCurrents(I, phi);
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
@@ -328,16 +319,13 @@ package Generic "Simple components for basic investigations"
   end FixedCurrent;
 
   model PrescribedPowerSource "Prescribed power source"
-    extends PowerSystems.Generic.Ports.PartialVoltageSource(
-      final potentialReference=true);
-    Modelica.Blocks.Interfaces.RealInput P(unit="W") annotation (Placement(
-          transformation(extent={{-130,-20},{-90,20}})));
+    extends PowerSystems.Generic.Ports.PartialVoltageSource(final potentialReference=true);
+    Modelica.Blocks.Interfaces.RealInput P(unit="W") annotation (Placement(transformation(extent={{-130,-20},{-90,20}})));
     PS.Current I "value of current";
   equation
     terminal.i = PhaseSystem.phaseCurrents(I, PhaseSystem.thetaRel(terminal.theta));
     0 = PhaseSystem.activePower(terminal.v, terminal.i) + P;
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={Rectangle(
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
             fillColor={255,255,255},
@@ -349,13 +337,11 @@ package Generic "Simple components for basic investigations"
 
   model PrescribedPowerLoad "Prescribed power load"
     extends PowerSystems.Generic.Ports.PartialLoad;
-    parameter SI.Angle phi = 0 "phase angle";
-    Modelica.Blocks.Interfaces.RealInput P(unit="W") annotation (Placement(
-          transformation(extent={{130,-20},{90,20}})));
+    parameter SI.Angle phi=0 "phase angle";
+    Modelica.Blocks.Interfaces.RealInput P(unit="W") annotation (Placement(transformation(extent={{130,-20},{90,20}})));
   equation
     PhaseSystem.phasePowers_vi(terminal.v, terminal.i) = PhaseSystem.phasePowers(P, phi);
-    annotation (Icon(coordinateSystem(preserveAspectRatio=false,
-            extent={{-100,-100},{100,100}}), graphics={Rectangle(
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={Rectangle(
             extent={{-90,90},{90,-90}},
             lineColor={0,120,120},
             fillColor={255,255,255},
@@ -369,37 +355,30 @@ package Generic "Simple components for basic investigations"
     extends Modelica.Icons.InterfacesPackage;
     connector Terminal_p "Positive terminal"
       extends PowerSystems.Interfaces.Terminal;
-      annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
-                    -100},{100,100}}), graphics={Polygon(
-                  points={{60,60},{-60,60},{-60,-60},{60,-60},{60,60}},
-                  lineColor={0,120,120},
-                  fillColor={0,120,120},
-                  fillPattern=FillPattern.Solid), Text(
-                  extent={{-150,60},{150,100}},
-                  lineColor={0,0,0},
-                  textString="%name")}),     Icon(coordinateSystem(
-                  preserveAspectRatio=false, extent={{-100,-100},{100,100}}),
-                graphics={Polygon(
-                  points={{100,100},{-100,100},{-100,-100},{100,-100},{100,100}},
-                  lineColor={0,120,120},
-                  fillColor={0,120,120},
-                  fillPattern=FillPattern.Solid)}));
+      annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={Polygon(
+              points={{60,60},{-60,60},{-60,-60},{60,-60},{60,60}},
+              lineColor={0,120,120},
+              fillColor={0,120,120},
+              fillPattern=FillPattern.Solid), Text(
+              extent={{-150,60},{150,100}},
+              lineColor={0,0,0},
+              textString="%name")}), Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={Polygon(
+              points={{100,100},{-100,100},{-100,-100},{100,-100},{100,100}},
+              lineColor={0,120,120},
+              fillColor={0,120,120},
+              fillPattern=FillPattern.Solid)}));
     end Terminal_p;
 
     connector Terminal_n "Negative terminal"
       extends PowerSystems.Interfaces.Terminal;
-      annotation (Diagram(coordinateSystem(preserveAspectRatio=true,  extent={{-100,
-                -100},{100,100}}),     graphics={
-                Text(
-                  extent={{-150,60},{150,100}},
-                  lineColor={0,0,0},
-                  textString="%name"), Rectangle(
+      annotation (Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={Text(
+              extent={{-150,60},{150,100}},
+              lineColor={0,0,0},
+              textString="%name"), Rectangle(
               extent={{-60,60},{60,-60}},
               lineColor={0,120,120},
               fillColor={255,255,255},
-              fillPattern=FillPattern.Solid)}),             Icon(coordinateSystem(
-                  preserveAspectRatio=true,  extent={{-100,-100},{100,100}}),
-                graphics={Rectangle(
+              fillPattern=FillPattern.Solid)}), Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={Rectangle(
               extent={{-100,100},{100,-100}},
               lineColor={0,120,120},
               fillColor={255,255,255},
@@ -407,29 +386,19 @@ package Generic "Simple components for basic investigations"
     end Terminal_n;
 
     partial model PartialTwoTerminal
-      replaceable package PhaseSystem = PackagePhaseSystem constrainedby
-        PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system"
-        annotation (choicesAllMatching=true);
+      replaceable package PhaseSystem = PackagePhaseSystem constrainedby PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system" annotation (choicesAllMatching=true);
       package PS = PhaseSystem;
-      function j = PhaseSystem.j annotation(Inline=true);
-      parameter PS.Voltage[PhaseSystem.n] v_start = zeros(PhaseSystem.n)
-        "Start value for voltage drop" annotation(Dialog(tab="Initialization"));
-      parameter PS.Current[PhaseSystem.n] i_start = zeros(PhaseSystem.n)
-        "Start value for current" annotation(Dialog(tab="Initialization"));
-      PowerSystems.Generic.Ports.Terminal_p terminal_p(
-        redeclare package PhaseSystem = PhaseSystem)
-        annotation (Placement(
-          transformation(extent={{-110,-10},{-90,10}})));
-      PowerSystems.Generic.Ports.Terminal_n terminal_n(
-        redeclare package PhaseSystem = PhaseSystem)
-        annotation (Placement(
-          transformation(extent={{90,-10},{110,10}})));
-      PS.Voltage[PhaseSystem.n] v(start = v_start);
-      PS.Current[PhaseSystem.n] i(start = i_start);
-      SI.Power p[PhaseSystem.n] = PhaseSystem.phasePowers_vi(v, i);
-      PS.Voltage V = PhaseSystem.systemVoltage(v);
-      PS.Current I = PhaseSystem.systemCurrent(i);
-      SI.Angle phi = PhaseSystem.phase(v) - PhaseSystem.phase(i);
+      function j = PhaseSystem.j annotation (Inline=true);
+      parameter PS.Voltage[PhaseSystem.n] v_start=zeros(PhaseSystem.n) "Start value for voltage drop" annotation (Dialog(tab="Initialization"));
+      parameter PS.Current[PhaseSystem.n] i_start=zeros(PhaseSystem.n) "Start value for current" annotation (Dialog(tab="Initialization"));
+      PowerSystems.Generic.Ports.Terminal_p terminal_p(redeclare package PhaseSystem = PhaseSystem) annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
+      PowerSystems.Generic.Ports.Terminal_n terminal_n(redeclare package PhaseSystem = PhaseSystem) annotation (Placement(transformation(extent={{90,-10},{110,10}})));
+      PS.Voltage[PhaseSystem.n] v(start=v_start);
+      PS.Current[PhaseSystem.n] i(start=i_start);
+      SI.Power p[PhaseSystem.n]=PhaseSystem.phasePowers_vi(v, i);
+      PS.Voltage V=PhaseSystem.systemVoltage(v);
+      PS.Current I=PhaseSystem.systemCurrent(i);
+      SI.Angle phi=PhaseSystem.phase(v) - PhaseSystem.phase(i);
     equation
       v = terminal_p.v - terminal_n.v;
       i = terminal_p.i;
@@ -437,20 +406,14 @@ package Generic "Simple components for basic investigations"
     end PartialTwoTerminal;
 
     partial model PartialSource
-      replaceable package PhaseSystem = PackagePhaseSystem constrainedby
-        PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system"
-        annotation (choicesAllMatching=true);
+      replaceable package PhaseSystem = PackagePhaseSystem constrainedby PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system" annotation (choicesAllMatching=true);
       package PS = PhaseSystem;
-      function j = PhaseSystem.j annotation(Inline=true);
-      PowerSystems.Generic.Ports.Terminal_n terminal(
-        redeclare package PhaseSystem = PhaseSystem)
-        annotation (Placement(transformation(extent={{90,-10},{110,10}})));
-      SI.Power p[PhaseSystem.n] = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
-      SI.Angle phi = PhaseSystem.phase(terminal.v) - PhaseSystem.phase(-terminal.i);
-      parameter Boolean potentialReference = true "serve as potential root"
-         annotation (Evaluate=true, Dialog(group="Reference Parameters"));
-      parameter Boolean definiteReference = false "serve as definite root"
-         annotation (Evaluate=true, Dialog(group="Reference Parameters"));
+      function j = PhaseSystem.j annotation (Inline=true);
+      PowerSystems.Generic.Ports.Terminal_n terminal(redeclare package PhaseSystem = PhaseSystem) annotation (Placement(transformation(extent={{90,-10},{110,10}})));
+      SI.Power p[PhaseSystem.n]=PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
+      SI.Angle phi=PhaseSystem.phase(terminal.v) - PhaseSystem.phase(-terminal.i);
+      parameter Boolean potentialReference=true "serve as potential root" annotation (Evaluate=true, Dialog(group="Reference Parameters"));
+      parameter Boolean definiteReference=false "serve as definite root" annotation (Evaluate=true, Dialog(group="Reference Parameters"));
     end PartialSource;
 
     partial model PartialVoltageSource
@@ -476,18 +439,13 @@ package Generic "Simple components for basic investigations"
     end PartialVoltageSource;
 
     partial model PartialLoad
-      replaceable package PhaseSystem = PackagePhaseSystem constrainedby
-        PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system"
-        annotation (choicesAllMatching=true);
+      replaceable package PhaseSystem = PackagePhaseSystem constrainedby PowerSystems.PhaseSystems.PartialPhaseSystem "Phase system" annotation (choicesAllMatching=true);
       package PS = PhaseSystem;
-      function j = PhaseSystem.j annotation(Inline=true);
-      parameter PS.Voltage[PhaseSystem.n] v_start = ones(PhaseSystem.n)
-        "Start value for voltage drop" annotation(Dialog(tab="Initialization"));
-      PowerSystems.Generic.Ports.Terminal_p terminal(
-        redeclare package PhaseSystem = PhaseSystem,
-        v(start = v_start))
+      function j = PhaseSystem.j annotation (Inline=true);
+      parameter PS.Voltage[PhaseSystem.n] v_start=ones(PhaseSystem.n) "Start value for voltage drop" annotation (Dialog(tab="Initialization"));
+      PowerSystems.Generic.Ports.Terminal_p terminal(redeclare package PhaseSystem = PhaseSystem, v(start=v_start))
         annotation (Placement(transformation(extent={{-110,-10},{-90,10}})));
-      SI.Power p[PhaseSystem.n] = PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
+      SI.Power p[PhaseSystem.n]=PhaseSystem.phasePowers_vi(terminal.v, terminal.i);
     end PartialLoad;
   end Ports;
 
@@ -495,11 +453,8 @@ package Generic "Simple components for basic investigations"
     extends Modelica.Icons.SensorsPackage;
     model PMeter "measure power flow"
       extends Ports.PartialTwoTerminal;
-      Modelica.Blocks.Interfaces.RealOutput P(quantity="Power",
-                                              unit="W")
-        "Active power flow from terminal_p to terminal_n"
-                                               annotation (Placement(
-            transformation(
+      Modelica.Blocks.Interfaces.RealOutput P(quantity="Power", unit="W") "Active power flow from terminal_p to terminal_n"
+        annotation (Placement(transformation(
             origin={0,110},
             extent={{10,-10},{-10,10}},
             rotation=270)));
@@ -510,48 +465,36 @@ package Generic "Simple components for basic investigations"
       if PhaseSystem.m > 0 then
         terminal_p.theta = terminal_n.theta;
       end if;
-      annotation(Icon(coordinateSystem(
+      annotation (Icon(coordinateSystem(
             preserveAspectRatio=false,
             extent={{-100,-100},{100,100}},
-            grid={2,2}), graphics={
-            Ellipse(
-              extent={{-70,70},{70,-70}},
-              lineColor={255,255,255},
-              fillColor={255,255,255},
-              fillPattern=FillPattern.Solid),
-            Line(points={{0,20},{0,90}}, color={135,135,135}),
-            Line(
-              points={{-90,0},{-20,0}},
-              color={0,100,100},
-              thickness=0.5),
-            Line(
-              points={{0,0},{90,0}},
-              color={0,100,100},
-              thickness=0.5),
-            Line(
-              points={{30,20},{70,0},{30,-20}},
-              color={0,100,100},
-              thickness=0.5),
-            Ellipse(extent={{-20,20},{20,-20}}, lineColor={135,135,135}),
-            Text(
-              extent={{-150,-130},{150,-90}},
-              lineColor={0,0,0},
-              textString="%name"),
-            Ellipse(
-              extent={{-20,20},{20,-20}},
-              lineColor={135,135,135},
-              fillColor={175,175,175},
-              fillPattern=FillPattern.Solid),
-            Line(
-              points={{0,0},{20,0}},
-              color={0,100,100},
-              thickness=0.5),
-            Ellipse(extent={{-70,70},{70,-70}}, lineColor={135,135,135}),
-            Line(points={{0,100},{0,70}}, color={0,0,127}),
-            Text(
-              extent={{162,120},{2,90}},
-              lineColor={0,0,0},
-              textString="P")}));
+            grid={2,2}), graphics={Ellipse(
+                  extent={{-70,70},{70,-70}},
+                  lineColor={255,255,255},
+                  fillColor={255,255,255},
+                  fillPattern=FillPattern.Solid),Line(points={{0,20},{0,90}}, color={135,135,135}),Line(
+                  points={{-90,0},{-20,0}},
+                  color={0,100,100},
+                  thickness=0.5),Line(
+                  points={{0,0},{90,0}},
+                  color={0,100,100},
+                  thickness=0.5),Line(
+                  points={{30,20},{70,0},{30,-20}},
+                  color={0,100,100},
+                  thickness=0.5),Ellipse(extent={{-20,20},{20,-20}}, lineColor={135,135,135}),Text(
+                  extent={{-150,-130},{150,-90}},
+                  lineColor={0,0,0},
+                  textString="%name"),Ellipse(
+                  extent={{-20,20},{20,-20}},
+                  lineColor={135,135,135},
+                  fillColor={175,175,175},
+                  fillPattern=FillPattern.Solid),Line(
+                  points={{0,0},{20,0}},
+                  color={0,100,100},
+                  thickness=0.5),Ellipse(extent={{-70,70},{70,-70}}, lineColor={135,135,135}),Line(points={{0,100},{0,70}}, color={0,0,127}),Text(
+                  extent={{162,120},{2,90}},
+                  lineColor={0,0,0},
+                  textString="P")}));
     end PMeter;
   end Sensors;
 end Generic;
